@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
-  title: Product Service API
-  description: API documentation for managing products in the product catalog.
+  title: Manager Service API
+  description: API documentation for manager service.
   version: 1.0.0
 servers:
   - url: https://zwjg64qp11.execute-api.eu-west-1.amazonaws.com/prod
