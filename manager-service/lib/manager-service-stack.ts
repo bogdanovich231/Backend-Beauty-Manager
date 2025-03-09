@@ -36,6 +36,16 @@ export class ManagerServiceStack extends cdk.Stack {
       role: lambdaRole,
     });
 
+    const loginUserLambda = new lambda.Function(this, "LoginUserLambda", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "loginUser.loginUser",
+      code: lambda.Code.fromAsset("dist/handlers"),
+      environment: {
+        USERS_TABLE: usersTable.tableName,
+      },
+      role: lambdaRole,
+    });
+
     const api = new apigateway.RestApi(this, "ManagerServiceApi", {
       restApiName: "Manager Service",
       defaultCorsPreflightOptions: {
@@ -46,9 +56,17 @@ export class ManagerServiceStack extends cdk.Stack {
     });
 
     const usersResource = api.root.addResource("users");
+
     usersResource.addMethod(
       "POST",
       new apigateway.LambdaIntegration(createUserLambda)
+    );
+
+    const loginResource = usersResource.addResource("login");
+
+    loginResource.addMethod(
+      "POST",
+      new apigateway.LambdaIntegration(loginUserLambda)
     );
 
     new cdk.CfnOutput(this, "ApiUrl", {
