@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import headers from "./utils/headers";
 import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
+import bcrypt from "bcryptjs";
 
 const client = new DynamoDBClient({ region: "eu-west-1" });
 
@@ -60,8 +61,9 @@ export async function loginUser(
     }
 
     const user = unmarshall(result.Items[0]);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
 
-    if (user.password !== password) {
+    if (!isPasswordValid) {
       return {
         statusCode: 401,
         headers,

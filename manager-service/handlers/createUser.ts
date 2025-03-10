@@ -6,6 +6,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import headers from "./utils/headers";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { randomUUID } from "crypto";
+import bcrypt from "bcryptjs";
 
 const client = new DynamoDBClient({ region: "eu-west-1" });
 
@@ -13,7 +14,6 @@ export const createUser = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-
     if (!event.body) {
       return {
         statusCode: 400,
@@ -31,6 +31,8 @@ export const createUser = async (
         body: JSON.stringify({ message: "Invalid user data" }),
       };
     }
+    const saltRounds = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     const userId = randomUUID();
 
@@ -43,7 +45,7 @@ export const createUser = async (
               id: userId,
               name,
               email,
-              password,
+              password: hashedPassword,
               image: image || "",
               is_admin: is_admin || false,
             }),

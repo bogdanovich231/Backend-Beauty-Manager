@@ -6,6 +6,7 @@ import {
   ReturnValue,
 } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
+import bcrypt from "bcryptjs";
 
 const client = new DynamoDBClient({ region: "eu-west-1" });
 
@@ -26,10 +27,15 @@ export async function updateUser(
     const { id } = event.pathParameters;
     const { name, email, password, image, is_admin } = JSON.parse(event.body);
 
-    const updates = { name, email, password, image, is_admin };
-    const updateExpression = [];
+    const updates: { [key: string]: any } = { name, email, image, is_admin };
     const expressionAttributeValues: { [key: string]: any } = {};
     const expressionAttributeNames: { [key: string]: string } = {};
+    const updateExpression = [];
+
+    if (password) {
+      const saltRounds = await bcrypt.genSalt(10);
+      updates.password = await bcrypt.hash(password, saltRounds); 
+    }
 
     for (const [key, value] of Object.entries(updates)) {
       if (value !== undefined) {
@@ -65,6 +71,7 @@ export async function updateUser(
 
     const result = await client.send(new UpdateItemCommand(params));
     const updatedUser = unmarshall(result.Attributes!);
+    delete updatedUser.password;
 
     return {
       statusCode: 200,

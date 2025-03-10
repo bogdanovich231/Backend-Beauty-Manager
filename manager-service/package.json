@@ -11,6 +11,7 @@
     "cdk": "cdk"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/jest": "^29.5.14",
     "@types/node": "22.7.9",
     "aws-cdk": "2.1002.0",
@@ -25,6 +26,7 @@
     "@aws-sdk/util-dynamodb": "^3.758.0",
     "@types/aws-lambda": "^8.10.147",
     "aws-cdk-lib": "^2.180.0",
+    "bcryptjs": "^3.0.2",
     "constructs": "^10.0.0"
   }
 }
