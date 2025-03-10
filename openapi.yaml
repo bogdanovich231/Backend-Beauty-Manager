@@ -83,6 +83,85 @@ paths:
                   message:
                     type: string
                     description: Error message
+  /users/{id}/:
+    put:
+      summary: Update users data
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the user to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The user name
+                email:
+                  type: string
+                  description: The product email
+                image:
+                  type: string
+                  description: The user image
+                password:
+                  type: string
+                  description: The user password
+                is_admin:
+                  type: boolean
+                  description: The user status
+
+      responses:
+        "200":
+          description: The user data was update successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: The ID of the created user
+                  name:
+                    type: string
+                    description: The user name
+                  email:
+                    type: string
+                    description: The product email
+                  image:
+                    type: string
+                    description: The user image
+                  password:
+                    type: string
+                    description: The user password
+                  is_admin:
+                    type: boolean
+                    description: The user status
+        "400":
+          description: Missing request body or user ID or No fields to update
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message
   /users/login:
     post:
       summary: Login user
@@ -169,4 +248,3 @@ paths:
                   message:
                     type: string
                     description: Error message
-  

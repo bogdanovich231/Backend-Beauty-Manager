@@ -24,6 +24,18 @@ export class ManagerServiceStack extends cdk.Stack {
       )
     );
 
+    lambdaRole.addToPolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ["dynamodb:UpdateItem", "dynamodb:Query", "dynamodb:GetItem"],
+        resources: [
+          usersTable.tableArn,
+          `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Users`,
+          `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Users/index/EmailIndex`,
+        ],
+      })
+    );
+
     usersTable.grantReadWriteData(lambdaRole);
 
     const createUserLambda = new lambda.Function(this, "CreateUserLambda", {
@@ -39,6 +51,16 @@ export class ManagerServiceStack extends cdk.Stack {
     const loginUserLambda = new lambda.Function(this, "LoginUserLambda", {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "loginUser.loginUser",
+      code: lambda.Code.fromAsset("dist/handlers"),
+      environment: {
+        USERS_TABLE: usersTable.tableName,
+      },
+      role: lambdaRole,
+    });
+
+    const updateUserLambda = new lambda.Function(this, "UpdateUserLambda", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "updateUser.updateUser",
       code: lambda.Code.fromAsset("dist/handlers"),
       environment: {
         USERS_TABLE: usersTable.tableName,
@@ -67,6 +89,13 @@ export class ManagerServiceStack extends cdk.Stack {
     loginResource.addMethod(
       "POST",
       new apigateway.LambdaIntegration(loginUserLambda)
+    );
+
+    const userResource = usersResource.addResource("{id}");
+
+    userResource.addMethod(
+      "PUT",
+      new apigateway.LambdaIntegration(updateUserLambda)
     );
 
     new cdk.CfnOutput(this, "ApiUrl", {
