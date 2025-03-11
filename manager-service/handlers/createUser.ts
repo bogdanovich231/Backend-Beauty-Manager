@@ -1,5 +1,6 @@
 import {
   DynamoDBClient,
+  QueryCommand,
   TransactWriteItemsCommand,
 } from "@aws-sdk/client-dynamodb";
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
@@ -33,6 +34,27 @@ export const createUser = async (
         body: JSON.stringify({ message: "Invalid user data" }),
       };
     }
+
+    const checkEmailParams = {
+      TableName: process.env.USERS_TABLE!,
+      IndexName: "EmailIndex",
+      KeyConditionExpression: "email = :email",
+      ExpressionAttributeValues: {
+        ":email": { S: email },
+      },
+    };
+
+    const checkEmailCommand = new QueryCommand(checkEmailParams);
+    const checkEmailResult = await client.send(checkEmailCommand);
+
+    if (checkEmailResult.Items && checkEmailResult.Items.length > 0) {
+      return {
+        statusCode: 409,
+        headers,
+        body: JSON.stringify({ message: "Email already exists" }),
+      };
+    }
+
     const saltRounds = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
