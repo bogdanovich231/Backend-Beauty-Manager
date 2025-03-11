@@ -7,8 +7,10 @@ import headers from "./utils/headers";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const client = new DynamoDBClient({ region: "eu-west-1" });
+const JWT_SECRET = process.env.JWT_TOKEN || "YOUR-TOKEN";
 
 export const createUser = async (
   event: APIGatewayProxyEvent
@@ -55,17 +57,28 @@ export const createUser = async (
     });
 
     await client.send(transactionCommand);
-
+    const jwtToken = jwt.sign(
+      {
+        userId: userId,
+        email: email,
+      },
+      JWT_SECRET,
+      {
+        expiresIn: "12h",
+      }
+    );
     return {
       statusCode: 201,
       headers,
       body: JSON.stringify({
-        id: userId,
-        name,
-        email,
-        password,
-        image,
-        is_admin,
+        message: "Register successful",
+        jwtToken,
+        user: {
+          id: userId,
+          email: email,
+          name: name,
+          is_admin: is_admin,
+        },
       }),
     };
   } catch (e) {

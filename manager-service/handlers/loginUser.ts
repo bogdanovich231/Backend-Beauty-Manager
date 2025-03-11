@@ -3,8 +3,10 @@ import headers from "./utils/headers";
 import { DynamoDBClient, QueryCommand } from "@aws-sdk/client-dynamodb";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const client = new DynamoDBClient({ region: "eu-west-1" });
+const JWT_SECRET = process.env.JWT_TOKEN || "YOUR-TOKEN";
 
 export async function loginUser(
   event: APIGatewayProxyEvent
@@ -70,11 +72,30 @@ export async function loginUser(
         body: JSON.stringify({ message: "Invalid password" }),
       };
     }
+    const jwtToken = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+      },
+      JWT_SECRET,
+      {
+        expiresIn: "12h",
+      }
+    );
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(user),
+      body: JSON.stringify({
+        message: "Login successful",
+        jwtToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          is_admin: user.is_admin,
+        },
+      }),
     };
   } catch (error) {
     console.error("Error:", error);
