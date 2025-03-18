@@ -1,5 +1,6 @@
 import {
   DynamoDBClient,
+  QueryCommand,
   TransactWriteItemsCommand,
 } from "@aws-sdk/client-dynamodb";
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
@@ -7,8 +8,10 @@ import headers from "./utils/headers";
 import { marshall } from "@aws-sdk/util-dynamodb";
 import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const client = new DynamoDBClient({ region: "eu-west-1" });
+const JWT_SECRET = process.env.JWT_TOKEN || "YOUR-TOKEN";
 
 export const createUser = async (
   event: APIGatewayProxyEvent
@@ -31,6 +34,27 @@ export const createUser = async (
         body: JSON.stringify({ message: "Invalid user data" }),
       };
     }
+
+    const checkEmailParams = {
+      TableName: process.env.USERS_TABLE!,
+      IndexName: "EmailIndex",
+      KeyConditionExpression: "email = :email",
+      ExpressionAttributeValues: {
+        ":email": { S: email },
+      },
+    };
+
+    const checkEmailCommand = new QueryCommand(checkEmailParams);
+    const checkEmailResult = await client.send(checkEmailCommand);
+
+    if (checkEmailResult.Items && checkEmailResult.Items.length > 0) {
+      return {
+        statusCode: 409,
+        headers,
+        body: JSON.stringify({ message: "Email already exists" }),
+      };
+    }
+
     const saltRounds = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
@@ -55,17 +79,28 @@ export const createUser = async (
     });
 
     await client.send(transactionCommand);
-
+    const jwtToken = jwt.sign(
+      {
+        userId: userId,
+        email: email,
+      },
+      JWT_SECRET,
+      {
+        expiresIn: "12h",
+      }
+    );
     return {
       statusCode: 201,
       headers,
       body: JSON.stringify({
-        id: userId,
-        name,
-        email,
-        password,
-        image,
-        is_admin,
+        message: "Register successful",
+        jwtToken,
+        user: {
+          id: userId,
+          email: email,
+          name: name,
+          is_admin: is_admin,
+        },
       }),
     };
   } catch (e) {

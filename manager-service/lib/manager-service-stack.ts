@@ -44,6 +44,7 @@ export class ManagerServiceStack extends cdk.Stack {
       code: lambda.Code.fromAsset("dist/handlers"),
       environment: {
         USERS_TABLE: usersTable.tableName,
+        JWT_SECRET: process.env.JWT_TOKEN || "YOUR-TOKEN",
       },
       role: lambdaRole,
     });
@@ -54,6 +55,7 @@ export class ManagerServiceStack extends cdk.Stack {
       code: lambda.Code.fromAsset("dist/handlers"),
       environment: {
         USERS_TABLE: usersTable.tableName,
+        JWT_SECRET: process.env.JWT_TOKEN || "YOUR-TOKEN",
       },
       role: lambdaRole,
     });
@@ -64,6 +66,17 @@ export class ManagerServiceStack extends cdk.Stack {
       code: lambda.Code.fromAsset("dist/handlers"),
       environment: {
         USERS_TABLE: usersTable.tableName,
+      },
+      role: lambdaRole,
+    });
+
+    const getUserLambda = new lambda.Function(this, "GetUserLambda", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "getUser.getUser",
+      code: lambda.Code.fromAsset("dist/handlers"),
+      environment: {
+        USERS_TABLE: usersTable.tableName,
+        JWT_SECRET: process.env.JWT_TOKEN || "YOUR-TOKEN",
       },
       role: lambdaRole,
     });
@@ -97,7 +110,10 @@ export class ManagerServiceStack extends cdk.Stack {
       "PUT",
       new apigateway.LambdaIntegration(updateUserLambda)
     );
-
+    userResource.addMethod(
+      "GET",
+      new apigateway.LambdaIntegration(getUserLambda)
+    );
     new cdk.CfnOutput(this, "ApiUrl", {
       value: api.url!,
     });
