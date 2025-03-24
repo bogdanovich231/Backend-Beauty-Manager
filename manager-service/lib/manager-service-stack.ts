@@ -113,6 +113,13 @@ export class ManagerServiceStack extends cdk.Stack {
       }
     );
 
+    const servicesResource = api.root.addResource("services");
+
+    servicesResource.addMethod(
+      "POST",
+      new apigateway.LambdaIntegration(createServiceLambda)
+    );
+
     const usersResource = api.root.addResource("users");
 
     usersResource.addMethod(
@@ -133,6 +140,7 @@ export class ManagerServiceStack extends cdk.Stack {
       "PUT",
       new apigateway.LambdaIntegration(updateUserLambda)
     );
+
     userResource.addMethod(
       "GET",
       new apigateway.LambdaIntegration(getUserLambda)
