@@ -14,6 +14,12 @@ export class ManagerServiceStack extends cdk.Stack {
       "Users"
     );
 
+    const serviceTable = dynamodb.Table.fromTableName(
+      this,
+      "ServiceTable",
+      "Service"
+    );
+
     const lambdaRole = new iam.Role(this, "LambdaRole", {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
     });
@@ -30,6 +36,8 @@ export class ManagerServiceStack extends cdk.Stack {
         actions: ["dynamodb:UpdateItem", "dynamodb:Query", "dynamodb:GetItem"],
         resources: [
           usersTable.tableArn,
+          serviceTable.tableArn,
+          `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Service`,
           `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Users`,
           `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Users/index/EmailIndex`,
         ],
@@ -37,6 +45,7 @@ export class ManagerServiceStack extends cdk.Stack {
     );
 
     usersTable.grantReadWriteData(lambdaRole);
+    serviceTable.grantReadWriteData(lambdaRole);
 
     const createUserLambda = new lambda.Function(this, "CreateUserLambda", {
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -89,6 +98,20 @@ export class ManagerServiceStack extends cdk.Stack {
         allowHeaders: apigateway.Cors.DEFAULT_HEADERS,
       },
     });
+
+    const createServiceLambda = new lambda.Function(
+      this,
+      "CreateServiceLambda",
+      {
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: "createService.createService",
+        code: lambda.Code.fromAsset("dist/handlers"),
+        environment: {
+          SERVICE_TABLE: serviceTable.tableName,
+        },
+        role: lambdaRole,
+      }
+    );
 
     const usersResource = api.root.addResource("users");
 
