@@ -1,12 +1,15 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import headers from "../utils/headers";
+import headers from "./utils/headers";
 import { randomUUID } from "crypto";
 import {
   DynamoDBClient,
+  TransactWriteItemsCommand,
 } from "@aws-sdk/client-dynamodb";
+import { marshall } from "@aws-sdk/util-dynamodb";
 
+const client = new DynamoDBClient({ region: "eu-west-1" });
 
-export const createServices = async (
+export const createService = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
@@ -21,24 +24,46 @@ export const createServices = async (
       event.body
     );
 
-    if (!title || !description || !image || !categories) {
+    if (!title || !description || !userId) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ message: "Invalid services data" }),
+        body: JSON.stringify({ message: "Invalid service data" }),
       };
     }
 
     const serviceId = randomUUID();
-    const servicesId = randomUUID();
+
+    const transactItems = [
+      {
+        Put: {
+          TableName: process.env.SERVICE_TABLE!,
+          Item: marshall({
+            id_service: serviceId,
+            userId,
+            title,
+            description,
+            image: image || "",
+            categories: categories || [],
+            createdAt: new Date().toISOString(),
+          }),
+        },
+      },
+    ];
+
+    const transactionCommand = new TransactWriteItemsCommand({
+      TransactItems: transactItems,
+    });
+
+    await client.send(transactionCommand);
 
     return {
       statusCode: 201,
       headers,
       body: JSON.stringify({
-        message: "Service successful added",
+        message: "Service successfully added",
         service: {
-          id: serviceId,
+          id_service: serviceId,
           title,
           userId,
           description,
