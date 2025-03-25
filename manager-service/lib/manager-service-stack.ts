@@ -113,11 +113,30 @@ export class ManagerServiceStack extends cdk.Stack {
       }
     );
 
+    const getServiceListLambda = new lambda.Function(
+      this,
+      "GetServiceListLambda",
+      {
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: "getServiceList.getServiceList",
+        code: lambda.Code.fromAsset("dist/handlers"),
+        environment: {
+          SERVICE_TABLE: serviceTable.tableName,
+        },
+        role: lambdaRole,
+      }
+    );
+
     const servicesResource = api.root.addResource("services");
 
     servicesResource.addMethod(
       "POST",
       new apigateway.LambdaIntegration(createServiceLambda)
+    );
+
+    servicesResource.addMethod(
+      "GET",
+      new apigateway.LambdaIntegration(getServiceListLambda)
     );
 
     const usersResource = api.root.addResource("users");
