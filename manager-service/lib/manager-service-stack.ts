@@ -104,7 +104,7 @@ export class ManagerServiceStack extends cdk.Stack {
       handler: "createSalon.createSalon",
       code: lambda.Code.fromAsset("dist/handlers"),
       environment: {
-        SERVICE_TABLE: salonsTable.tableName,
+        SALON_TABLE: salonsTable.tableName,
       },
       role: lambdaRole,
     });
@@ -117,13 +117,24 @@ export class ManagerServiceStack extends cdk.Stack {
         handler: "getSalonsList.getSalonsList",
         code: lambda.Code.fromAsset("dist/handlers"),
         environment: {
-          SERVICE_TABLE: salonsTable.tableName,
+          SALON_TABLE: salonsTable.tableName,
         },
         role: lambdaRole,
       }
     );
 
+    const getSalonByIdLambda = new lambda.Function(this, "GetSalonByIdLambda", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "getSalonById.getSalonById",
+      code: lambda.Code.fromAsset("dist/handlers"),
+      environment: {
+        SALON_TABLE: salonsTable.tableName,
+      },
+      role: lambdaRole,
+    });
+
     const salonsResource = api.root.addResource("salons");
+    const salonResource = salonsResource.addResource("{id}");
 
     salonsResource.addMethod(
       "POST",
@@ -133,6 +144,11 @@ export class ManagerServiceStack extends cdk.Stack {
     salonsResource.addMethod(
       "GET",
       new apigateway.LambdaIntegration(getSalonsListLambda)
+    );
+
+    salonResource.addMethod(
+      "GET",
+      new apigateway.LambdaIntegration(getSalonByIdLambda)
     );
 
     const usersResource = api.root.addResource("users");

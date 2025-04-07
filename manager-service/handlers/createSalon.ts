@@ -37,7 +37,7 @@ export const createSalon = async (
     const transactItems = [
       {
         Put: {
-          TableName: process.env.SERVICE_TABLE!,
+          TableName: process.env.SALON_TABLE!,
           Item: marshall({
             salonId: salonId,
             userId,
@@ -62,7 +62,7 @@ export const createSalon = async (
       headers,
       body: JSON.stringify({
         message: "Service successfully added",
-        service: {
+        salon: {
           salonId: salonId,
           title,
           userId,

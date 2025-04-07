@@ -10,7 +10,7 @@ export const getSalonsList = async (
 ): Promise<APIGatewayProxyResult> => {
   try {
     const salonCommand = new ScanCommand({
-      TableName: process.env.SERVICE_TABLE!,
+      TableName: process.env.SALON_TABLE!,
     });
 
     const result = await client.send(salonCommand);
