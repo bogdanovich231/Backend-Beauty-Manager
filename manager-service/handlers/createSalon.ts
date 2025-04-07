@@ -9,7 +9,7 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 
 const client = new DynamoDBClient({ region: "eu-west-1" });
 
-export const createService = async (
+export const createSalon = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
@@ -28,18 +28,18 @@ export const createService = async (
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ message: "Invalid service data" }),
+        body: JSON.stringify({ message: "Invalid salon data" }),
       };
     }
 
-    const serviceId = randomUUID();
+    const salonId = randomUUID();
 
     const transactItems = [
       {
         Put: {
           TableName: process.env.SERVICE_TABLE!,
           Item: marshall({
-            id_service: serviceId,
+            salonId: salonId,
             userId,
             title,
             description,
@@ -63,7 +63,7 @@ export const createService = async (
       body: JSON.stringify({
         message: "Service successfully added",
         service: {
-          id_service: serviceId,
+          salonId: salonId,
           title,
           userId,
           description,

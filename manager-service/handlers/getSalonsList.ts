@@ -5,23 +5,23 @@ import { unmarshall } from "@aws-sdk/util-dynamodb";
 
 const client = new DynamoDBClient({ region: "eu-west-1" });
 
-export const getServiceList = async (
+export const getSalonsList = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-    const serviceCommand = new ScanCommand({
+    const salonCommand = new ScanCommand({
       TableName: process.env.SERVICE_TABLE!,
     });
 
-    const result = await client.send(serviceCommand);
+    const result = await client.send(salonCommand);
 
-    const serviceList = result.Items?.map((item) => unmarshall(item));
+    const salonsList = result.Items?.map((item) => unmarshall(item));
 
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        serviceList,
+        salonsList,
       }),
     };
   } catch (e) {

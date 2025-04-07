@@ -14,10 +14,10 @@ export class ManagerServiceStack extends cdk.Stack {
       "Users"
     );
 
-    const serviceTable = dynamodb.Table.fromTableName(
+    const salonsTable = dynamodb.Table.fromTableName(
       this,
-      "ServiceTable",
-      "Service"
+      "SalonsTable",
+      "Salons"
     );
 
     const lambdaRole = new iam.Role(this, "LambdaRole", {
@@ -36,8 +36,8 @@ export class ManagerServiceStack extends cdk.Stack {
         actions: ["dynamodb:UpdateItem", "dynamodb:Query", "dynamodb:GetItem"],
         resources: [
           usersTable.tableArn,
-          serviceTable.tableArn,
-          `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Service`,
+          salonsTable.tableArn,
+          `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Salons`,
           `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Users`,
           `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Users/index/EmailIndex`,
         ],
@@ -45,7 +45,7 @@ export class ManagerServiceStack extends cdk.Stack {
     );
 
     usersTable.grantReadWriteData(lambdaRole);
-    serviceTable.grantReadWriteData(lambdaRole);
+    salonsTable.grantReadWriteData(lambdaRole);
 
     const createUserLambda = new lambda.Function(this, "CreateUserLambda", {
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -99,44 +99,40 @@ export class ManagerServiceStack extends cdk.Stack {
       },
     });
 
-    const createServiceLambda = new lambda.Function(
+    const createSalonLambda = new lambda.Function(this, "CreateSalonLambda", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "createSalon.createSalon",
+      code: lambda.Code.fromAsset("dist/handlers"),
+      environment: {
+        SERVICE_TABLE: salonsTable.tableName,
+      },
+      role: lambdaRole,
+    });
+
+    const getSalonsListLambda = new lambda.Function(
       this,
-      "CreateServiceLambda",
+      "GetSalonsListLambda",
       {
         runtime: lambda.Runtime.NODEJS_20_X,
-        handler: "createService.createService",
+        handler: "getSalonsList.getSalonsList",
         code: lambda.Code.fromAsset("dist/handlers"),
         environment: {
-          SERVICE_TABLE: serviceTable.tableName,
+          SERVICE_TABLE: salonsTable.tableName,
         },
         role: lambdaRole,
       }
     );
 
-    const getServiceListLambda = new lambda.Function(
-      this,
-      "GetServiceListLambda",
-      {
-        runtime: lambda.Runtime.NODEJS_20_X,
-        handler: "getServiceList.getServiceList",
-        code: lambda.Code.fromAsset("dist/handlers"),
-        environment: {
-          SERVICE_TABLE: serviceTable.tableName,
-        },
-        role: lambdaRole,
-      }
-    );
+    const salonsResource = api.root.addResource("salons");
 
-    const servicesResource = api.root.addResource("services");
-
-    servicesResource.addMethod(
+    salonsResource.addMethod(
       "POST",
-      new apigateway.LambdaIntegration(createServiceLambda)
+      new apigateway.LambdaIntegration(createSalonLambda)
     );
 
-    servicesResource.addMethod(
+    salonsResource.addMethod(
       "GET",
-      new apigateway.LambdaIntegration(getServiceListLambda)
+      new apigateway.LambdaIntegration(getSalonsListLambda)
     );
 
     const usersResource = api.root.addResource("users");
