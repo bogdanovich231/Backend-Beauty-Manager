@@ -20,6 +20,12 @@ export class ManagerServiceStack extends cdk.Stack {
       "Salons"
     );
 
+    const servicesTable = dynamodb.Table.fromTableName(
+      this,
+      "ServicesTable",
+      "Services"
+    );
+
     const lambdaRole = new iam.Role(this, "LambdaRole", {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
     });
@@ -33,11 +39,18 @@ export class ManagerServiceStack extends cdk.Stack {
     lambdaRole.addToPolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        actions: ["dynamodb:UpdateItem", "dynamodb:Query", "dynamodb:GetItem"],
+        actions: [
+          "dynamodb:UpdateItem",
+          "dynamodb:Query",
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+        ],
         resources: [
           usersTable.tableArn,
           salonsTable.tableArn,
+          servicesTable.tableArn,
           `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Salons`,
+          `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Services`,
           `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Users`,
           `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Users/index/EmailIndex`,
         ],
@@ -46,6 +59,7 @@ export class ManagerServiceStack extends cdk.Stack {
 
     usersTable.grantReadWriteData(lambdaRole);
     salonsTable.grantReadWriteData(lambdaRole);
+    servicesTable.grantReadWriteData(lambdaRole);
 
     const createUserLambda = new lambda.Function(this, "CreateUserLambda", {
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -90,15 +104,6 @@ export class ManagerServiceStack extends cdk.Stack {
       role: lambdaRole,
     });
 
-    const api = new apigateway.RestApi(this, "ManagerServiceApi", {
-      restApiName: "Manager Service",
-      defaultCorsPreflightOptions: {
-        allowOrigins: apigateway.Cors.ALL_ORIGINS,
-        allowMethods: apigateway.Cors.ALL_METHODS,
-        allowHeaders: apigateway.Cors.DEFAULT_HEADERS,
-      },
-    });
-
     const createSalonLambda = new lambda.Function(this, "CreateSalonLambda", {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "createSalon.createSalon",
@@ -133,12 +138,44 @@ export class ManagerServiceStack extends cdk.Stack {
       role: lambdaRole,
     });
 
+    const createServiceLambda = new lambda.Function(
+      this,
+      "CreateServiceLambda",
+      {
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: "createServices.createServices",
+        code: lambda.Code.fromAsset("dist/handlers"),
+        environment: {
+          SERVICES_TABLE: servicesTable.tableName,
+        },
+        role: lambdaRole,
+      }
+    );
+
+    const api = new apigateway.RestApi(this, "ManagerServiceApi", {
+      restApiName: "Manager Service",
+      defaultCorsPreflightOptions: {
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowMethods: apigateway.Cors.ALL_METHODS,
+        allowHeaders: apigateway.Cors.DEFAULT_HEADERS,
+      },
+    });
+
+    const usersResource = api.root.addResource("users");
+    const loginResource = usersResource.addResource("login");
+    const userResource = usersResource.addResource("{id}");
     const salonsResource = api.root.addResource("salons");
     const salonResource = salonsResource.addResource("{id}");
+    const serviceResource = salonResource.addResource("services");
 
     salonsResource.addMethod(
       "POST",
       new apigateway.LambdaIntegration(createSalonLambda)
+    );
+
+    serviceResource.addMethod(
+      "POST",
+      new apigateway.LambdaIntegration(createServiceLambda)
     );
 
     salonsResource.addMethod(
@@ -151,21 +188,15 @@ export class ManagerServiceStack extends cdk.Stack {
       new apigateway.LambdaIntegration(getSalonByIdLambda)
     );
 
-    const usersResource = api.root.addResource("users");
-
     usersResource.addMethod(
       "POST",
       new apigateway.LambdaIntegration(createUserLambda)
     );
 
-    const loginResource = usersResource.addResource("login");
-
     loginResource.addMethod(
       "POST",
       new apigateway.LambdaIntegration(loginUserLambda)
     );
-
-    const userResource = usersResource.addResource("{id}");
 
     userResource.addMethod(
       "PUT",
