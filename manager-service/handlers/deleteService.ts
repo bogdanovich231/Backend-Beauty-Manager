@@ -10,6 +10,7 @@ export const deleteService = async (
   ): Promise<APIGatewayProxyResult> => {  
     try {  
       const serviceId = event.pathParameters?.serviceId;
+      
       if (!serviceId) {
         return {
           statusCode: 400,
