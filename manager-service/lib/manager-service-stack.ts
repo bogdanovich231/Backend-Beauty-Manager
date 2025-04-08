@@ -44,6 +44,7 @@ export class ManagerServiceStack extends cdk.Stack {
           "dynamodb:Query",
           "dynamodb:GetItem",
           "dynamodb:PutItem",
+          "dynamodb:DeleteItem"
         ],
         resources: [
           usersTable.tableArn,
@@ -114,6 +115,16 @@ export class ManagerServiceStack extends cdk.Stack {
       role: lambdaRole,
     });
 
+    const deleteServiceLambda = new lambda.Function(this, "DeleteServiceLambda", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "deleteService.deleteService", 
+      code: lambda.Code.fromAsset("dist/handlers"),
+      environment: {
+        SERVICES_TABLE: servicesTable.tableName, 
+      },
+      role: lambdaRole, 
+    });
+
     const getSalonsListLambda = new lambda.Function(
       this,
       "GetSalonsListLambda",
@@ -167,6 +178,7 @@ export class ManagerServiceStack extends cdk.Stack {
     const salonsResource = api.root.addResource("salons");
     const salonResource = salonsResource.addResource("{id}");
     const serviceResource = salonResource.addResource("services");
+    const serviceIdResource = serviceResource.addResource("{serviceId}");
 
     salonsResource.addMethod(
       "POST",
@@ -176,6 +188,11 @@ export class ManagerServiceStack extends cdk.Stack {
     serviceResource.addMethod(
       "POST",
       new apigateway.LambdaIntegration(createServiceLambda)
+    );
+
+    serviceIdResource.addMethod(
+      "DELETE",
+      new apigateway.LambdaIntegration(deleteServiceLambda)
     );
 
     salonsResource.addMethod(
