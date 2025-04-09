@@ -115,24 +115,34 @@ export class ManagerServiceStack extends cdk.Stack {
       role: lambdaRole,
     });
 
-    const getServiceLambda = new lambda.Function(this, "GetServiceLambda", {
+    const updateSalonLambda = new lambda.Function(this, "UpdateSalonLambda", {
       runtime: lambda.Runtime.NODEJS_20_X,
-      handler: "getServiceById.getServiceById", 
+      handler: "updateSalon.updateSalon",
       code: lambda.Code.fromAsset("dist/handlers"),
       environment: {
-        SERVICES_TABLE: servicesTable.tableName, 
+        SALON_TABLE: salonsTable.tableName,
+      },
+      role: lambdaRole,
+    });
+
+    const getServiceLambda = new lambda.Function(this, "GetServiceLambda", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "getServiceById.getServiceById",
+      code: lambda.Code.fromAsset("dist/handlers"),
+      environment: {
+        SERVICES_TABLE: servicesTable.tableName,
       },
       role: lambdaRole, 
     });
 
     const deleteServiceLambda = new lambda.Function(this, "DeleteServiceLambda", {
       runtime: lambda.Runtime.NODEJS_20_X,
-      handler: "deleteService.deleteService", 
+      handler: "deleteService.deleteService",
       code: lambda.Code.fromAsset("dist/handlers"),
       environment: {
-        SERVICES_TABLE: servicesTable.tableName, 
+        SERVICES_TABLE: servicesTable.tableName,
       },
-      role: lambdaRole, 
+      role: lambdaRole,
     });
 
     const getSalonsListLambda = new lambda.Function(
@@ -193,6 +203,11 @@ export class ManagerServiceStack extends cdk.Stack {
     salonsResource.addMethod(
       "POST",
       new apigateway.LambdaIntegration(createSalonLambda)
+    );
+
+    salonResource.addMethod(
+      "PUT",
+      new apigateway.LambdaIntegration(updateSalonLambda)
     );
 
     serviceResource.addMethod(
