@@ -135,6 +135,16 @@ export class ManagerServiceStack extends cdk.Stack {
       role: lambdaRole, 
     });
 
+    const updateServiceLambda = new lambda.Function(this, "UpdateServiceLambda", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "updateService.updateService",
+      code: lambda.Code.fromAsset("dist/handlers"),
+      environment: {
+        SERVICES_TABLE: servicesTable.tableName,
+      },
+      role: lambdaRole,
+    });
+
     const deleteServiceLambda = new lambda.Function(this, "DeleteServiceLambda", {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "deleteService.deleteService",
@@ -225,6 +235,11 @@ export class ManagerServiceStack extends cdk.Stack {
       new apigateway.LambdaIntegration(getServiceLambda)
     )
 
+    serviceIdResource.addMethod(
+      "PUT",
+      new apigateway.LambdaIntegration(updateServiceLambda)
+    );
+    
     salonsResource.addMethod(
       "GET",
       new apigateway.LambdaIntegration(getSalonsListLambda)

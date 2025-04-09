@@ -5,11 +5,11 @@ import headers from "./utils/headers";
 
 const client = new DynamoDBClient({ region: "eu-west-1" });
 
-export const updateSalon = async (
+export const updateService = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-    const salonId = event.pathParameters?.id;
+    const serviceId = event.pathParameters?.serviceId;
 
     if (!event.body) {
       return {
@@ -18,32 +18,30 @@ export const updateSalon = async (
         body: JSON.stringify({ message: "Missing request body" }),
       };
     }
-    if (!salonId) {
+    if (!serviceId) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({ message: "Missing parameter" }),
       };
     }
-    const { title, description, image, categories } = JSON.parse(
+    const { price, title} = JSON.parse(
       event.body
     );
 
     const updateCommand = new UpdateItemCommand({
-      TableName: process.env.SALON_TABLE!,
+      TableName: process.env.SERVICES_TABLE!,
       Key: {
-        salonId: { S: salonId }, 
+        serviceId: {S: serviceId},
       },
       UpdateExpression:
-        "SET title = :title, description = :description, image = :image, categories = :categories",
+        "SET title = :title, price = :price",
         ExpressionAttributeValues:{
-          ":title": { S: title },
-          ":description": { S: description },
-          ":image": { S: image },
-          ":categories": { S: JSON.stringify(categories)},
+            ":price": { N: price.toString() },
+            ":title": {S: title},
         },
-      ConditionExpression: "attribute_exists(salonId)",
-      ReturnValues: "ALL_NEW", // This is correct as a string, but ensure the rest of the command structure is valid.
+      ConditionExpression: "attribute_exists(serviceId)",
+      ReturnValues: "ALL_NEW", 
     });
 
     const updateResult = await client.send(updateCommand);
@@ -52,8 +50,8 @@ export const updateSalon = async (
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        message: "Salon updated successfully",
-        updatedSalon: updateResult.Attributes,
+        message: "Service updated successfully",
+        updatedService: updateResult.Attributes,
       }),
     };
   } catch (error: any) {
@@ -61,10 +59,11 @@ export const updateSalon = async (
       return {
         statusCode: 404,
         headers,
-        body: JSON.stringify({ message: "Salon not found" }),
+        body: JSON.stringify({ message: "Service not found" }),
       };
     }
 
+    console.error("Error:", error);
     return {
       statusCode: 500,
       headers,
@@ -73,4 +72,4 @@ export const updateSalon = async (
   }
 };
 
-export default updateSalon;
+export default updateService;
