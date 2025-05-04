@@ -26,6 +26,11 @@ export class ManagerServiceStack extends cdk.Stack {
       "Services"
     );
 
+    const favoritesTable = dynamodb.Table.fromTableName(
+      this,
+      "FavoritesTable",
+      "favorites"
+    );
     const lambdaRole = new iam.Role(this, "LambdaRole", {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
     });
@@ -44,16 +49,19 @@ export class ManagerServiceStack extends cdk.Stack {
           "dynamodb:Query",
           "dynamodb:GetItem",
           "dynamodb:PutItem",
-          "dynamodb:DeleteItem"
+          "dynamodb:DeleteItem",
         ],
         resources: [
           usersTable.tableArn,
           salonsTable.tableArn,
           servicesTable.tableArn,
+          favoritesTable.tableArn,
           `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Salons`,
           `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Services`,
           `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Users`,
           `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Users/index/EmailIndex`,
+          `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/favorites`,
+          `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/favorites/index/UserIdIndex`,
         ],
       })
     );
@@ -61,6 +69,7 @@ export class ManagerServiceStack extends cdk.Stack {
     usersTable.grantReadWriteData(lambdaRole);
     salonsTable.grantReadWriteData(lambdaRole);
     servicesTable.grantReadWriteData(lambdaRole);
+    favoritesTable.grantReadWriteData(lambdaRole);
 
     const createUserLambda = new lambda.Function(this, "CreateUserLambda", {
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -132,28 +141,36 @@ export class ManagerServiceStack extends cdk.Stack {
       environment: {
         SERVICES_TABLE: servicesTable.tableName,
       },
-      role: lambdaRole, 
-    });
-
-    const updateServiceLambda = new lambda.Function(this, "UpdateServiceLambda", {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: "updateService.updateService",
-      code: lambda.Code.fromAsset("dist/handlers"),
-      environment: {
-        SERVICES_TABLE: servicesTable.tableName,
-      },
       role: lambdaRole,
     });
 
-    const deleteServiceLambda = new lambda.Function(this, "DeleteServiceLambda", {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      handler: "deleteService.deleteService",
-      code: lambda.Code.fromAsset("dist/handlers"),
-      environment: {
-        SERVICES_TABLE: servicesTable.tableName,
-      },
-      role: lambdaRole,
-    });
+    const updateServiceLambda = new lambda.Function(
+      this,
+      "UpdateServiceLambda",
+      {
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: "updateService.updateService",
+        code: lambda.Code.fromAsset("dist/handlers"),
+        environment: {
+          SERVICES_TABLE: servicesTable.tableName,
+        },
+        role: lambdaRole,
+      }
+    );
+
+    const deleteServiceLambda = new lambda.Function(
+      this,
+      "DeleteServiceLambda",
+      {
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: "deleteService.deleteService",
+        code: lambda.Code.fromAsset("dist/handlers"),
+        environment: {
+          SERVICES_TABLE: servicesTable.tableName,
+        },
+        role: lambdaRole,
+      }
+    );
 
     const getSalonsListLambda = new lambda.Function(
       this,
@@ -193,6 +210,40 @@ export class ManagerServiceStack extends cdk.Stack {
       }
     );
 
+    const addFavoriteLambda = new lambda.Function(this, "AddFavoriteLambda", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "addFavorite.addFavorite",
+      code: lambda.Code.fromAsset("dist/handlers"),
+      environment: {
+        FAVORITES_TABLE: favoritesTable.tableName,
+      },
+      role: lambdaRole,
+    });
+
+    const getFavoritesLambda = new lambda.Function(this, "GetFavoritesLambda", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "getFavorites.getFavorites",
+      code: lambda.Code.fromAsset("dist/handlers"),
+      environment: {
+        FAVORITES_TABLE: favoritesTable.tableName,
+      },
+      role: lambdaRole,
+    });
+
+    const deleteFavoriteLambda = new lambda.Function(
+      this,
+      "DeleteFavoriteLambda",
+      {
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: "deleteFavorite.deleteFavorite",
+        code: lambda.Code.fromAsset("dist/handlers"),
+        environment: {
+          FAVORITES_TABLE: favoritesTable.tableName,
+        },
+        role: lambdaRole,
+      }
+    );
+
     const api = new apigateway.RestApi(this, "ManagerServiceApi", {
       restApiName: "Manager Service",
       defaultCorsPreflightOptions: {
@@ -209,6 +260,24 @@ export class ManagerServiceStack extends cdk.Stack {
     const salonResource = salonsResource.addResource("{id}");
     const serviceResource = salonResource.addResource("services");
     const serviceIdResource = serviceResource.addResource("{serviceId}");
+    const favoritesResource = api.root.addResource("favorites");
+
+    favoritesResource.addMethod(
+      "POST",
+      new apigateway.LambdaIntegration(addFavoriteLambda)
+    );
+
+    favoritesResource.addMethod(
+      "GET",
+      new apigateway.LambdaIntegration(getFavoritesLambda)
+    );
+
+    favoritesResource
+      .addResource("{id_service}")
+      .addMethod(
+        "DELETE",
+        new apigateway.LambdaIntegration(deleteFavoriteLambda)
+      );
 
     salonsResource.addMethod(
       "POST",
@@ -233,13 +302,13 @@ export class ManagerServiceStack extends cdk.Stack {
     serviceIdResource.addMethod(
       "GET",
       new apigateway.LambdaIntegration(getServiceLambda)
-    )
+    );
 
     serviceIdResource.addMethod(
       "PUT",
       new apigateway.LambdaIntegration(updateServiceLambda)
     );
-    
+
     salonsResource.addMethod(
       "GET",
       new apigateway.LambdaIntegration(getSalonsListLambda)
