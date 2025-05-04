@@ -337,3 +337,125 @@ paths:
                   message:
                     type: string
                     description: Error message
+  /salons:
+    post:
+      summary: Create a new salon
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  description: The user name
+                title:
+                  type: string
+                  description: The user name
+                description:
+                  type: string
+                  description: The product email
+                image:
+                  type: string
+                  description: The user image
+                categories:
+                  type: array
+                  items:
+                    $ref: "#"
+
+              required:
+                - userId
+                - title
+                - description
+                - image
+                - category
+
+      responses:
+        "200":
+          description: The salon was created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  salonId:
+                    type: string
+                    description: The ID of the created user
+                  userId:
+                    type: string
+                    description: The user name
+                  title:
+                    type: string
+                    description: The user name
+                  description:
+                    type: string
+                    description: The product email
+                  image:
+                    type: string
+                    description: The user image
+                  categories:
+                    type: array
+                    items:
+                      $ref: "#"
+
+        "400":
+          description: Missing request body
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message
+  /salons/:
+    get:
+      summary: Get salons list
+      responses:
+        "200":
+          description: The salons data was retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  salonId:
+                    type: string
+                    description: The ID of the created user
+                  userId:
+                    type: string
+                    description: The user name
+                  title:
+                    type: string
+                    description: The user name
+                  description:
+                    type: string
+                    description: The product email
+                  image:
+                    type: string
+                    description: The user image
+                  categories:
+                    type: array
+                    items:
+                      $ref: "#"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message

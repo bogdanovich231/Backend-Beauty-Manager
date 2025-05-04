@@ -104,7 +104,6 @@ export const createUser = async (
       }),
     };
   } catch (e) {
-    console.error("Error:", e);
     return {
       statusCode: 500,
       headers,
