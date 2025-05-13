@@ -210,6 +210,20 @@ export class ManagerServiceStack extends cdk.Stack {
       }
     );
 
+    const getServicesListLambda = new lambda.Function(
+      this,
+      "GetServicesListLambda",
+      {
+        runtime: lambda.Runtime.NODEJS_20_X,
+        handler: "getServicesList.getServicesList",
+        code: lambda.Code.fromAsset("dist/handlers"),
+        environment: {
+          SERVICES_TABLE: servicesTable.tableName,
+        },
+        role: lambdaRole,
+      }
+    );
+
     const addFavoriteLambda = new lambda.Function(this, "AddFavoriteLambda", {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "addFavorite.addFavorite",
@@ -293,7 +307,10 @@ export class ManagerServiceStack extends cdk.Stack {
       "POST",
       new apigateway.LambdaIntegration(createServiceLambda)
     );
-
+    serviceResource.addMethod(
+      "GET",
+      new apigateway.LambdaIntegration(getServicesListLambda)
+    );
     serviceIdResource.addMethod(
       "DELETE",
       new apigateway.LambdaIntegration(deleteServiceLambda)
