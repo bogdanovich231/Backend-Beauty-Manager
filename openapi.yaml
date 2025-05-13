@@ -5,7 +5,7 @@ info:
   version: 1.0.0
 servers:
   - url: https://zwjg64qp11.execute-api.eu-west-1.amazonaws.com/prod
-    description: server
+    description: Production server
 paths:
   /users:
     post:
@@ -22,7 +22,7 @@ paths:
                   description: The user name
                 email:
                   type: string
-                  description: The product email
+                  description: The user email
                 image:
                   type: string
                   description: The user image
@@ -36,63 +36,16 @@ paths:
                 - name
                 - email
                 - password
-
       responses:
         "200":
           description: The user was created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    description: The ID of the created user
-                  name:
-                    type: string
-                    description: The user name
-                  email:
-                    type: string
-                    description: The product email
-                  image:
-                    type: string
-                    description: The user image
-                  password:
-                    type: string
-                    description: The user password
-                  is_admin:
-                    type: boolean
-                    description: The user status
         "400":
           description: Missing request body
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
         "409":
           description: Email already exists
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
         "500":
           description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
+
   /users/{id}:
     get:
       summary: Get user by ID
@@ -103,78 +56,15 @@ paths:
           schema:
             type: string
           description: The ID of the user to retrieve
-        - name: Authorization
-          in: header
-          required: true
-          schema:
-            type: string
-          description: Bearer token for authentication
       responses:
         "200":
           description: The user data was retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    description: The ID of the user
-                  name:
-                    type: string
-                    description: The user name
-                  email:
-                    type: string
-                    description: The user email
-                  image:
-                    type: string
-                    description: The user image
-                  is_admin:
-                    type: boolean
-                    description: The user status
-        "400":
-          description: User ID is required
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
-        "401":
-          description: Unauthorized (invalid or missing token)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
         "404":
           description: User not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
         "500":
           description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
-  /users/{id}/:
     put:
-      summary: Update users data
+      summary: Update user data
       parameters:
         - name: id
           in: path
@@ -191,66 +81,29 @@ paths:
               properties:
                 name:
                   type: string
-                  description: The user name
+                  description: The updated user name
                 email:
                   type: string
-                  description: The product email
+                  description: The updated user email
                 image:
                   type: string
-                  description: The user image
+                  description: The updated user image
                 password:
                   type: string
-                  description: The user password
+                  description: The updated user password
                 is_admin:
                   type: boolean
-                  description: The user status
-
+                  description: The updated user status
       responses:
         "200":
-          description: The user data was update successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    description: The ID of the created user
-                  name:
-                    type: string
-                    description: The user name
-                  email:
-                    type: string
-                    description: The product email
-                  image:
-                    type: string
-                    description: The user image
-                  password:
-                    type: string
-                    description: The user password
-                  is_admin:
-                    type: boolean
-                    description: The user status
+          description: User updated successfully
         "400":
-          description: Missing request body or user ID or No fields to update
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
+          description: Invalid input
+        "404":
+          description: User not found
         "500":
           description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
+
   /users/login:
     post:
       summary: Login user
@@ -263,80 +116,23 @@ paths:
               properties:
                 email:
                   type: string
-                  description: The product email
+                  description: The user email
                 password:
                   type: string
                   description: The user password
               required:
                 - email
                 - password
-
       responses:
         "200":
-          description: The user was login successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                    description: The ID of the created user
-                  name:
-                    type: string
-                    description: The user name
-                  email:
-                    type: string
-                    description: The product email
-                  image:
-                    type: string
-                    description: The user image
-                  password:
-                    type: string
-                    description: The user password
-                  is_admin:
-                    type: boolean
-                    description: The user status
-        "400":
-          description: Invalid user data
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
+          description: User logged in successfully
         "401":
-          description: Invalid password
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
+          description: Invalid credentials
         "404":
           description: User not found
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
         "500":
           description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
+
   /salons:
     post:
       summary: Create a new salon
@@ -349,113 +145,284 @@ paths:
               properties:
                 userId:
                   type: string
-                  description: The user name
+                  description: The ID of the user creating the salon
                 title:
                   type: string
-                  description: The user name
+                  description: The salon title
                 description:
                   type: string
-                  description: The product email
+                  description: The salon description
                 image:
                   type: string
-                  description: The user image
+                  description: The salon image URL
                 categories:
                   type: array
                   items:
-                    $ref: "#"
-
+                    type: string
+                  description: The salon categories
               required:
                 - userId
                 - title
                 - description
                 - image
-                - category
-
       responses:
         "200":
-          description: The salon was created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  salonId:
-                    type: string
-                    description: The ID of the created user
-                  userId:
-                    type: string
-                    description: The user name
-                  title:
-                    type: string
-                    description: The user name
-                  description:
-                    type: string
-                    description: The product email
-                  image:
-                    type: string
-                    description: The user image
-                  categories:
-                    type: array
-                    items:
-                      $ref: "#"
-
+          description: Salon created successfully
         "400":
           description: Missing request body
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
         "500":
           description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: Error message
-  /salons/:
     get:
-      summary: Get salons list
+      summary: Get list of salons
       responses:
         "200":
-          description: The salons data was retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  salonId:
-                    type: string
-                    description: The ID of the created user
-                  userId:
-                    type: string
-                    description: The user name
-                  title:
-                    type: string
-                    description: The user name
-                  description:
-                    type: string
-                    description: The product email
-                  image:
-                    type: string
-                    description: The user image
-                  categories:
-                    type: array
-                    items:
-                      $ref: "#"
+          description: List of salons retrieved successfully
         "500":
           description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
+
+  /salons/{id}:
+    get:
+      summary: Get a specific salon
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the salon to retrieve
+      responses:
+        "200":
+          description: Salon retrieved successfully
+        "404":
+          description: Salon not found
+        "500":
+          description: Internal server error
+    put:
+      summary: Update a specific salon
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the salon to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: The updated salon title
+                description:
+                  type: string
+                  description: The updated salon description
+                image:
+                  type: string
+                  description: The updated salon image URL
+                categories:
+                  type: array
+                  items:
                     type: string
-                    description: Error message
+                  description: The updated salon categories
+      responses:
+        "200":
+          description: Salon updated successfully
+        "400":
+          description: Invalid input
+        "404":
+          description: Salon not found
+        "500":
+          description: Internal server error
+
+  /salons/{id}/services:
+    get:
+      summary: Get services of a specific salon
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the salon
+      responses:
+        "200":
+          description: Services retrieved successfully
+        "404":
+          description: Salon not found
+        "500":
+          description: Internal server error
+    post:
+      summary: Add a service to a specific salon
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the salon
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The service name
+                price:
+                  type: number
+                  description: The service price
+                duration:
+                  type: string
+                  description: The service duration
+              required:
+                - name
+                - price
+                - duration
+      responses:
+        "200":
+          description: Service added successfully
+        "400":
+          description: Invalid input
+        "404":
+          description: Salon not found
+        "500":
+          description: Internal server error
+
+  /salons/{id}/services/{service_id}:
+    get:
+      summary: Get a specific service
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the salon
+        - name: service_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the service
+      responses:
+        "200":
+          description: Service retrieved successfully
+        "404":
+          description: Service not found
+        "500":
+          description: Internal server error
+    put:
+      summary: Update a specific service
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the salon
+        - name: service_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The updated service name
+                price:
+                  type: number
+                  description: The updated service price
+                duration:
+                  type: string
+                  description: The updated service duration
+      responses:
+        "200":
+          description: Service updated successfully
+        "400":
+          description: Invalid input
+        "404":
+          description: Service not found
+        "500":
+          description: Internal server error
+    delete:
+      summary: Delete a specific service
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the salon
+        - name: service_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the service
+      responses:
+        "200":
+          description: Service deleted successfully
+        "404":
+          description: Service not found
+        "500":
+          description: Internal server error
+
+  /favorites:
+    get:
+      summary: Get favorite services
+      responses:
+        "200":
+          description: Favorites retrieved successfully
+        "500":
+          description: Internal server error
+    post:
+      summary: Add a service to favorites
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                service_id:
+                  type: string
+                  description: The ID of the service to add to favorites
+              required:
+                - service_id
+      responses:
+        "200":
+          description: Service added to favorites successfully
+        "400":
+          description: Invalid input
+        "500":
+          description: Internal server error
+
+  /favorites/{id_service}:
+    delete:
+      summary: Remove a service from favorites
+      parameters:
+        - name: id_service
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the service to remove from favorites
+      responses:
+        "200":
+          description: Service removed from favorites successfully
+        "404":
+          description: Service not found in favorites
+        "500":
+          description: Internal server error
