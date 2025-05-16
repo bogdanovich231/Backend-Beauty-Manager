@@ -9,7 +9,7 @@ export const getServicesList = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-    const salonId = event.pathParameters?.salonId;
+    const salonId = event.pathParameters?.id;
 
     if (!salonId) {
       return {
