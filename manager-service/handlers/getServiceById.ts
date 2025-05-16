@@ -1,7 +1,11 @@
-import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
+import {
+  DynamoDBClient,
+  GetItemCommand,
+  QueryCommand,
+} from "@aws-sdk/client-dynamodb";
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import headers from "./utils/headers";
-import { marshall, unmarshall} from "@aws-sdk/util-dynamodb";
+import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 
 const client = new DynamoDBClient({ region: "eu-west-1" });
 
@@ -20,11 +24,11 @@ export const getServiceById = async (
     }
 
     const getServiceCommand = new GetItemCommand({
-        TableName: process.env.SERVICES_TABLE!,
-        Key: marshall({
-          serviceId: serviceId,
-        }),
-      });
+      TableName: process.env.SERVICES_TABLE!,
+      Key: marshall({
+        serviceId: serviceId,
+      }),
+    });
 
     const serviceResult = await client.send(getServiceCommand);
 
@@ -36,12 +40,29 @@ export const getServiceById = async (
       };
     }
 
+    const slotsCommand = new QueryCommand({
+      TableName: process.env.SLOTS_TABLE!,
+      IndexName: "ServiceIdIndex",
+      KeyConditionExpression: "serviceId = :serviceId",
+      ExpressionAttributeValues: {
+        ":serviceId": { S: serviceId },
+      },
+    });
+
+    const slotsResult = await client.send(slotsCommand);
+
     const service = unmarshall(serviceResult.Item);
+    const slots = slotsResult.Items?.map((item) => unmarshall(item)) || [];
+
+    const response = {
+      ...service,
+      slots,
+    };
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify(service),
+      body: JSON.stringify(response),
     };
   } catch (error) {
     console.error("Error:", error);

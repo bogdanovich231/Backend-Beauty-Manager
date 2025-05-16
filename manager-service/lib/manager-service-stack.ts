@@ -31,6 +31,13 @@ export class ManagerServiceStack extends cdk.Stack {
       "FavoritesTable",
       "favorites"
     );
+
+    const slotsTable = dynamodb.Table.fromTableName(
+      this,
+      "SlotsTable",
+      "Slots"
+    );
+
     const lambdaRole = new iam.Role(this, "LambdaRole", {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
     });
@@ -56,12 +63,15 @@ export class ManagerServiceStack extends cdk.Stack {
           salonsTable.tableArn,
           servicesTable.tableArn,
           favoritesTable.tableArn,
+          slotsTable.tableArn,
           `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Salons`,
           `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Services`,
           `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Users`,
           `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Users/index/EmailIndex`,
           `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/favorites`,
+          `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Slots`,
           `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/favorites/index/UserIdIndex`,
+          `arn:aws:dynamodb:eu-west-1:${cdk.Aws.ACCOUNT_ID}:table/Slots/index/ServiceIdIndex`,
         ],
       })
     );
@@ -70,6 +80,7 @@ export class ManagerServiceStack extends cdk.Stack {
     salonsTable.grantReadWriteData(lambdaRole);
     servicesTable.grantReadWriteData(lambdaRole);
     favoritesTable.grantReadWriteData(lambdaRole);
+    slotsTable.grantReadWriteData(lambdaRole);
 
     const createUserLambda = new lambda.Function(this, "CreateUserLambda", {
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -140,6 +151,7 @@ export class ManagerServiceStack extends cdk.Stack {
       code: lambda.Code.fromAsset("dist/handlers"),
       environment: {
         SERVICES_TABLE: servicesTable.tableName,
+        SLOTS_TABLE: slotsTable.tableName,
       },
       role: lambdaRole,
     });
@@ -258,6 +270,16 @@ export class ManagerServiceStack extends cdk.Stack {
       }
     );
 
+    const createSlotLambda = new lambda.Function(this, "CreateSlotLambda", {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "createSlot.createSlot",
+      code: lambda.Code.fromAsset("dist/handlers"),
+      environment: {
+        SLOTS_TABLE: slotsTable.tableName,
+      },
+      role: lambdaRole,
+    });
+
     const api = new apigateway.RestApi(this, "ManagerServiceApi", {
       restApiName: "Manager Service",
       defaultCorsPreflightOptions: {
@@ -319,6 +341,11 @@ export class ManagerServiceStack extends cdk.Stack {
     serviceIdResource.addMethod(
       "GET",
       new apigateway.LambdaIntegration(getServiceLambda)
+    );
+
+    serviceIdResource.addMethod(
+      "POST",
+      new apigateway.LambdaIntegration(createSlotLambda)
     );
 
     serviceIdResource.addMethod(
